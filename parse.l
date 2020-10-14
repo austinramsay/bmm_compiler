@@ -13,10 +13,11 @@ int input_line_no = 1;
 %}
 
 whitespace	[ \t]
-number		[0-9]
+digit		[0-9]
 letter		[A-Za-z]
 alfanum		[A-Za-z0-9_]
-intcon		{number}+
+asciichar	[\x20-\x7e]
+int		{digit}+
 id		{letter}{alfanum}*
 anything	.
 
@@ -26,11 +27,13 @@ anything	.
   */
 
 %Start comment_in comment_out string_in char_in char_out
+%option noyywrap 
 
 %%
 
  /* line number is recorded */
 [\n]                        input_line_no++;
+
 
  /* identify comments */
 <INITIAL>"/""*"         {
@@ -45,13 +48,39 @@ anything	.
 <comment_out>[^*/] BEGIN(comment_in);
 
 
+ /* identify strings */
 <INITIAL>\" {
 	BEGIN(string_in);
 }
-
-<INITIAL>{intcon} {
-	return(INTCON);
+<string_in>[^"]		;
+<string_in>\" {
+	BEGIN(INITIAL);
+	return(STRING);
 }
+
+
+ /* identify chars */
+<INITIAL>"'" {
+	BEGIN(char_in);
+}
+<char_in>"\\" {
+	// still taking in char newline or null char
+	;
+}
+<char_in>asciichar {
+	BEGIN(char_out);
+}
+<char_out>"'" {
+	BEGIN(INITIAL);
+	return(CHAR);
+}
+
+
+ /* identify integer values (0 to N) */
+<INITIAL>{int} {
+	return(INT);
+}
+
 
  /*
   * For strings that can not be identified by any patterns specified previously
@@ -61,13 +90,14 @@ anything	.
 	return(OTHER);
 }
 
+
 %%
 
  /* only used in testing lex */
- /*main() {
+ main() {
         int result;
         while ((result=yylex()) != 0) {
             printf("%d\t%s\n", result, yytext);
         }
         return 0;
- }*/
+ }
