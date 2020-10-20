@@ -1,27 +1,33 @@
+/* 
+ * Austin Ramsay
+ * austinramsay@gmail.com
+ * 
+ * University of Arizona
+*/
+
 %{
 
 #include <stdio.h>
-#define YDEBUG
+
+// #define YDEBUG
 #ifndef YDEBUG
-
 #define Y_DEBUG_PRINT(x)
-
 #else
-
 #define Y_DEBUG_PRINT(x) printf("Yout %s \n ",x)
-
 #endif
 
 int yydebug = 1;
+
+// Buffer from lex to get token values 
 extern char the_token[];
-/* This is how I read tokens from lex... :) */
 
+// Current line number accounted for by lex 
 extern int input_line_no;
-/* This is the current line number */
 
+// Buffer from lex for the whole line 
 extern char *full_line;
-/* This is the full line */
 
+// Function prototypes
 void yyerror();
 void warn(char *);
 
@@ -38,74 +44,79 @@ void warn(char *);
 %left LSTHAN GRTHAN LSEQUAL GREQUAL
 %left ADD MINUS
 %left MUL DIV
-%right UMINUS NOT
+%right NOT
+%nonassoc UMINUS 
 
 %%
 
-Assign : ID Assign1 ASSIGN Expr {Y_DEBUG_PRINT("Assign-1-ID-Assign1-ASSIGN-Expr"); }
+prog :	/* empty */ 
+     	| prog statement		{ Y_DEBUG_PRINT("prog-1-statement"); } 
+	;
 
-Assign1 : 			{ Y_DEBUG_PRINT("Assign1-1-Empty"); }
-	| LBRAC Expr RBRAC 	{ Y_DEBUG_PRINT("Assign1-2-LBRAC-Expr-RBRAC"); }
-	| LBRAC Expr error 	{ warn(": missing RBRAC"); }
-	| error Expr RBRAC 	{ warn(": missing LBRAC"); }
+statement : assign SEMIC		{ Y_DEBUG_PRINT("statement-1-assign-SEMIC"); }
+
+assign : ID assign1 ASSIGN expr {Y_DEBUG_PRINT("assign-1-ID-assign1-ASSIGN-expr"); }
+
+assign1 : 			{ Y_DEBUG_PRINT("assign1-1-Empty"); }
+	| LBRAC expr RBRAC 	{ Y_DEBUG_PRINT("assign1-2-LBRAC-expr-RBRAC"); }
+	| LBRAC expr error 	{ warn(": missing RBRAC"); }
+	| error expr RBRAC 	{ warn(": missing LBRAC"); }
 	| LBRAC error RBRAC 	{ warn(": Invalid array index"); }
 
-Expr : MINUS Expr %prec UMINUS 	{ Y_DEBUG_PRINT("Expr-1-UMINUS Expr"); }
-	| NOT Expr 		{ Y_DEBUG_PRINT("Expr-2-ANABG Expr"); }
-	| Expr Binop Expr 	{ Y_DEBUG_PRINT("Expr-3-Expr-Binop-Expr"); }
-	| Expr Relop Expr 	{ Y_DEBUG_PRINT("Expr-4-Expr-Binop-Expr"); }
-	| Expr Logop Expr 	{ Y_DEBUG_PRINT("Expr-5-Expr-Logop-Expr"); }
-	| ID 			{ Y_DEBUG_PRINT("Expr-6-ID"); }
-	| LPAR Expr RPAR 	{ Y_DEBUG_PRINT("Expr-7-LPAR-Expr-RPAR");}
-	| INT 			{ Y_DEBUG_PRINT("Expr-8-INT"); }
-	| CHAR 			{ Y_DEBUG_PRINT("Expr-9-CHAR"); }
-	| STRING 		{ Y_DEBUG_PRINT("Expr-10-STRING"); }
-	| Array 		{ Y_DEBUG_PRINT("Expr-11-Array"); }
+expr : MINUS expr %prec UMINUS 	{ Y_DEBUG_PRINT("expr-1-UMINUS expr"); }
+	| NOT expr 		{ Y_DEBUG_PRINT("expr-2-ABANG expr"); }
+	| expr binaryop expr 	{ Y_DEBUG_PRINT("expr-3-expr-binaryop-expr"); }
+	| expr relop expr 	{ Y_DEBUG_PRINT("expr-4-expr-binaryop-expr"); }
+	| expr logicop expr 	{ Y_DEBUG_PRINT("expr-5-expr-logicop-expr"); }
+	| ID 			{ Y_DEBUG_PRINT("expr-6-ID"); }
+	| LPAR expr RPAR 	{ Y_DEBUG_PRINT("expr-7-LPAR-expr-RPAR");}
+	| INT 			{ Y_DEBUG_PRINT("expr-8-INT"); }
+	| CHAR 			{ Y_DEBUG_PRINT("expr-9-CHAR"); }
+	| STRING 		{ Y_DEBUG_PRINT("expr-10-STRING"); }
+	| array 		{ Y_DEBUG_PRINT("expr-11-array"); }
 	| error 		{ warn(":invalid expression "); }
 
-Array :	ID LBRAC Expr RBRAC 	{ Y_DEBUG_PRINT("Array-1-ID-LBRAC-Expr-RBRAC"); }
+array :	ID LBRAC expr RBRAC 	{ Y_DEBUG_PRINT("array-1-ID-LBRAC-expr-RBRAC"); }
 	| ID error RBRAC 	{ warn( ": invalid array expression"); }
 
-Binop : ADD 			{ Y_DEBUG_PRINT("Binop-1-ADD"); }
-	| MINUS 			{ Y_DEBUG_PRINT("Binop-2-MINUS"); }
-	| MUL 			{ Y_DEBUG_PRINT("Binop-3-MUL"); }
-	| DIV 			{ Y_DEBUG_PRINT("Binop-4-DIV"); }
+binaryop : ADD 			{ Y_DEBUG_PRINT("binaryop-1-ADD"); }
+	| MINUS 			{ Y_DEBUG_PRINT("binaryop-2-MINUS"); }
+	| MUL 			{ Y_DEBUG_PRINT("binaryop-3-MUL"); }
+	| DIV 			{ Y_DEBUG_PRINT("binaryop-4-DIV"); }
 
-Logop : AND 			{ Y_DEBUG_PRINT("Logop-1-AND"); }
-	| OR 		{ Y_DEBUG_PRINT("Logop-2-OR"); }
+logicop : AND 			{ Y_DEBUG_PRINT("logicop-1-AND"); }
+	| OR 		{ Y_DEBUG_PRINT("logicop-2-OR"); }
 
-Relop : EQUALS 			{ Y_DEBUG_PRINT("Relop-1-EQUALS"); }
-	| NTEQUAL 		{ Y_DEBUG_PRINT("Relop-2-NTEQUAL"); }
-	| LSEQUAL 		{ Y_DEBUG_PRINT("Relop-3-LSEQUAL"); }
-	| GREQUAL 		{ Y_DEBUG_PRINT("Relop-4-GREQUAL"); }
-	| GRTHAN 		{ Y_DEBUG_PRINT("Relop-5-GRTHAN"); }
-	| LSTHAN 		{ Y_DEBUG_PRINT("Relop-6-LSTHAN"); }
+relop : EQUALS 			{ Y_DEBUG_PRINT("relop-1-EQUALS"); }
+	| NTEQUAL 		{ Y_DEBUG_PRINT("relop-2-NTEQUAL"); }
+	| LSEQUAL 		{ Y_DEBUG_PRINT("relop-3-LSEQUAL"); }
+	| GREQUAL 		{ Y_DEBUG_PRINT("relop-4-GREQUAL"); }
+	| GRTHAN 		{ Y_DEBUG_PRINT("relop-5-GRTHAN"); }
+	| LSTHAN 		{ Y_DEBUG_PRINT("relop-6-LSTHAN"); }
 
 %%
 
-/*
-int main()
-{
+int main() {
+
 	int result = yyparse();
 
-	if (lex_state == 1) {
+	/*if (lex_state == 1) {
 		yyerror("End of file within a comment");
 	}
 
 	if (lex_state == 2) {
 		yyerror("End of file within a string");
-	}
-	
+	}*/
 
 	return result;
-}*/
+}
 
 int yywrap() {
 	return 1;
 }
 
 void yyerror(char *s) {
-	fprintf(stderr, "%s on line %d",s,input_line_no);
+	fprintf(stderr, "%s on line %d\n", s, input_line_no);
 }
 
 void warn(char *s) {

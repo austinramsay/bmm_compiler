@@ -28,14 +28,15 @@ anything	.
   */
 
 %Start comment_in comment_out string_in char_in char_out
-%option noyywrap 
-
 
 %%
 
 
+ /* ignore whitespace */
+[ \t]	;
+
  /* line number is recorded */
-[\n]                        input_line_no++;
+[\n]	input_line_no++;
 
 
  /* identify comments */
@@ -154,6 +155,10 @@ anything	.
 <INITIAL>"]"	return(RBRAC);
 
 
+ /* NOT operator */
+<INITIAL>"!"	return(NOT);
+
+
  /*
   * For strings that can not be identified by any patterns specified previously
   * lex returns the value of the character
@@ -163,16 +168,14 @@ anything	.
 }
 
 
-
-
 %%
 
 
  /* only used in testing lex */
-main() {
+ /* main() {
 	int result;
         while ((result=yylex()) != 0) {
             printf("%d\t%s\n", result, yytext);
         }
         return 0;
- }
+}*/
