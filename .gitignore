@@ -4,3 +4,6 @@ y.output
 notes
 y.tab.h
 testfile
+parse
+scanner
+lex.yy.c
