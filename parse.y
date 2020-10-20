@@ -27,22 +27,22 @@ void warn(char *);
 
 %}
 
-%token STRING CHAR INT EQUALS NOTEQU GREEQU LESEQU GREATE LESSTH
-%token ANDCOM ORCOMP SEMIC COMMA LPARN RPARN LBRAC RBRAC LCURL RCURL NOT
-%token EQUAL ADD SUB MUL DIV ID EXTERN FOR WHILE RETURN IF ELSE
+%token STRING CHAR INT EQUALS NTEQUAL GREQUAL LSEQUAL GRTHAN LSTHAN
+%token AND OR SEMIC COMMA LPAR RPAR LBRAC RBRAC LCURL RCURL NOT
+%token ASSIGN ADD MINUS MUL DIV ID EXTERN FOR WHILE RETURN IF ELSE
 %token VOID OTHER
 
-%left ORCOMP
-%left ANDCOM
-%left EQUALS NOTEQU
-%left LESSTH GREATE LESEQU GREEQU
-%left ADD SUB
+%left OR
+%left AND
+%left EQUALS NTEQUAL
+%left LSTHAN GRTHAN LSEQUAL GREQUAL
+%left ADD MINUS
 %left MUL DIV
 %right UMINUS NOT
 
 %%
 
-Assign : ID Assign1 EQUAL Expr {Y_DEBUG_PRINT("Assign-1-ID-Assign1-EQUAL-Expr"); }
+Assign : ID Assign1 ASSIGN Expr {Y_DEBUG_PRINT("Assign-1-ID-Assign1-ASSIGN-Expr"); }
 
 Assign1 : 			{ Y_DEBUG_PRINT("Assign1-1-Empty"); }
 	| LBRAC Expr RBRAC 	{ Y_DEBUG_PRINT("Assign1-2-LBRAC-Expr-RBRAC"); }
@@ -50,13 +50,13 @@ Assign1 : 			{ Y_DEBUG_PRINT("Assign1-1-Empty"); }
 	| error Expr RBRAC 	{ warn(": missing LBRAC"); }
 	| LBRAC error RBRAC 	{ warn(": Invalid array index"); }
 
-Expr : SUB Expr %prec UMINUS 	{ Y_DEBUG_PRINT("Expr-1-UMINUS Expr"); }
+Expr : MINUS Expr %prec UMINUS 	{ Y_DEBUG_PRINT("Expr-1-UMINUS Expr"); }
 	| NOT Expr 		{ Y_DEBUG_PRINT("Expr-2-ANABG Expr"); }
 	| Expr Binop Expr 	{ Y_DEBUG_PRINT("Expr-3-Expr-Binop-Expr"); }
 	| Expr Relop Expr 	{ Y_DEBUG_PRINT("Expr-4-Expr-Binop-Expr"); }
 	| Expr Logop Expr 	{ Y_DEBUG_PRINT("Expr-5-Expr-Logop-Expr"); }
 	| ID 			{ Y_DEBUG_PRINT("Expr-6-ID"); }
-	| LPARN Expr RPARN 	{ Y_DEBUG_PRINT("Expr-7-LPARN-Expr-RPARN");}
+	| LPAR Expr RPAR 	{ Y_DEBUG_PRINT("Expr-7-LPAR-Expr-RPAR");}
 	| INT 			{ Y_DEBUG_PRINT("Expr-8-INT"); }
 	| CHAR 			{ Y_DEBUG_PRINT("Expr-9-CHAR"); }
 	| STRING 		{ Y_DEBUG_PRINT("Expr-10-STRING"); }
@@ -67,36 +67,38 @@ Array :	ID LBRAC Expr RBRAC 	{ Y_DEBUG_PRINT("Array-1-ID-LBRAC-Expr-RBRAC"); }
 	| ID error RBRAC 	{ warn( ": invalid array expression"); }
 
 Binop : ADD 			{ Y_DEBUG_PRINT("Binop-1-ADD"); }
-	| SUB 			{ Y_DEBUG_PRINT("Binop-2-SUB"); }
+	| MINUS 			{ Y_DEBUG_PRINT("Binop-2-MINUS"); }
 	| MUL 			{ Y_DEBUG_PRINT("Binop-3-MUL"); }
 	| DIV 			{ Y_DEBUG_PRINT("Binop-4-DIV"); }
 
-Logop : ANDCOM 			{ Y_DEBUG_PRINT("Logop-1-ANDCOM"); }
-	| ORCOMP 		{ Y_DEBUG_PRINT("Logop-2-ORCOMP"); }
+Logop : AND 			{ Y_DEBUG_PRINT("Logop-1-AND"); }
+	| OR 		{ Y_DEBUG_PRINT("Logop-2-OR"); }
 
 Relop : EQUALS 			{ Y_DEBUG_PRINT("Relop-1-EQUALS"); }
-	| NOTEQU 		{ Y_DEBUG_PRINT("Relop-2-NOTEQU"); }
-	| LESEQU 		{ Y_DEBUG_PRINT("Relop-3-LESEQU"); }
-	| GREEQU 		{ Y_DEBUG_PRINT("Relop-4-GREEQU"); }
-	| GREATE 		{ Y_DEBUG_PRINT("Relop-5-GREATE"); }
-	| LESSTH 		{ Y_DEBUG_PRINT("Relop-6-LESSTH"); }
+	| NTEQUAL 		{ Y_DEBUG_PRINT("Relop-2-NTEQUAL"); }
+	| LSEQUAL 		{ Y_DEBUG_PRINT("Relop-3-LSEQUAL"); }
+	| GREQUAL 		{ Y_DEBUG_PRINT("Relop-4-GREQUAL"); }
+	| GRTHAN 		{ Y_DEBUG_PRINT("Relop-5-GRTHAN"); }
+	| LSTHAN 		{ Y_DEBUG_PRINT("Relop-6-LSTHAN"); }
 
 %%
 
+/*
 int main()
 {
 	int result = yyparse();
 
-	/*if (lex_state == 1) {
+	if (lex_state == 1) {
 		yyerror("End of file within a comment");
 	}
 
 	if (lex_state == 2) {
 		yyerror("End of file within a string");
-	}*/
+	}
+	
 
 	return result;
-}
+}*/
 
 int yywrap() {
 	return 1;
@@ -109,3 +111,4 @@ void yyerror(char *s) {
 void warn(char *s) {
 	fprintf(stderr, "%s\n", s);
 }
+ 

@@ -19,6 +19,7 @@ alfanum		[A-Za-z0-9_]
 asciichar	[\x20-\x7e]
 int		{digit}+
 id		{letter}{alfanum}*
+binop		[-+*/]
 anything	.
 
  /*
@@ -29,7 +30,9 @@ anything	.
 %Start comment_in comment_out string_in char_in char_out
 %option noyywrap 
 
+
 %%
+
 
  /* line number is recorded */
 [\n]                        input_line_no++;
@@ -67,8 +70,16 @@ anything	.
 	// still taking in char newline or null char
 	;
 }
-<char_in>asciichar {
+<char_in>{asciichar} {
 	BEGIN(char_out);
+}
+<char_in>{anything} {
+	BEGIN(INITIAL);
+	return(OTHER);
+}
+<char_out>[^'] {
+	BEGIN(INITIAL);
+	return(OTHER);
 }
 <char_out>"'" {
 	BEGIN(INITIAL);
@@ -82,20 +93,84 @@ anything	.
 }
 
 
+ /* identify if-else tokens */
+<INITIAL>"if" 	return(IF);
+<INITIAL>"else" return(ELSE);
+
+
+ /* identify loop tokens */
+<INITIAL>"for"		return(FOR);
+<INITIAL>"while"	return(WHILE);
+
+
+ /* return token */
+<INITIAL>"return"	return(RETURN);
+
+
+ /* identify IDs */
+<INITIAL>{id}	return(ID);
+
+
+ /* assignment operator */
+<INITIAL>"="	return(ASSIGN);
+
+
+ /* identify binary operators */
+<INITIAL>{binop} {
+	if (strcmp(yytext, "+") == 0) {
+		return(ADD);
+	} else if (strcmp(yytext, "-") == 0) {
+		return(MINUS);
+	} else if (strcmp(yytext, "*") == 0) {
+		return(MUL);
+	} else if (strcmp(yytext, "/") == 0) {
+		return(DIV);
+	}
+}
+
+
+ /* identify relational operators */
+<INITIAL>"=="	return(EQUALS);
+<INITIAL>"!="	return(NTEQUAL);
+<INITIAL>">="	return(GREQUAL);
+<INITIAL>"<="	return(LSEQUAL);
+<INITIAL>">"	return(GRTHAN);
+<INITIAL>"<"	return(LSTHAN);
+
+
+ /* identify logical operators */
+<INITIAL>"&&"	return(AND);
+<INITIAL>"||"	return(OR);
+
+
+ /* semicolons, brackets, commas and paranethesis */
+<INITIAL>";"	return(SEMIC);
+<INITIAL>","	return(COMMA);
+<INITIAL>"("	return(LPAR);
+<INITIAL>")"	return(RPAR);
+<INITIAL>"{"	return(LCURL);
+<INITIAL>"}"	return(RCURL);
+<INITIAL>"["	return(LBRAC);
+<INITIAL>"]"	return(RBRAC);
+
+
  /*
   * For strings that can not be identified by any patterns specified previously
   * lex returns the value of the character
   */
-<INITIAL>anything { 
+<INITIAL>{anything} { 
 	return(OTHER);
 }
 
 
+
+
 %%
 
+
  /* only used in testing lex */
- main() {
-        int result;
+main() {
+	int result;
         while ((result=yylex()) != 0) {
             printf("%d\t%s\n", result, yytext);
         }
